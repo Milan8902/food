@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="col-lg-6 hero-content">
+                <div class="hero-text">
+                    <h1 class="display-3 fw-bold mb-4">Jump into Style</h1>
+                    <p class="lead mb-4">Experience the perfect blend of performance and style with our premium collection.</p>
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'shoes:shop' %}" class="btn btn-primary btn-lg px-4">Shop Now</a>
+                        <a href="#" class="btn btn-outline-primary btn-lg px-4">Explore Collection</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image">
+                    <img src="https://source.unsplash.com/1200x600/?jordan-shoes" alt="Jordan Shoes" class="img-fluid">
+                    <div class="hero-overlay"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="featured-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Featured Collection</h2>
+            <p class="section-subtitle text-muted">Discover our latest releases and fan favorites</p>
+        </div>
+        <div class="row g-4">
+            {% for shoe in featured_shoes %}
+            <div class="col-md-3 col-sm-6">
+                <div class="product-card h-100" data-aos="fade-up" data-aos-duration="1000">
+                    <div class="card-image-wrapper">
+                        {% if shoe.image %}
+                        <img src="{{ shoe.image.url }}" class="card-img-top" alt="{{ shoe.name }}" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+                        <div class="product-badge">
+                            {% if shoe.stock > 0 %}
+                                <span class="badge bg-success">In Stock</span>
+                            {% else %}
+                                <span class="badge bg-danger">Sold Out</span>
+                            {% endif %}
+                        </div>
+                        <div class="product-overlay">
+                            <div class="product-actions">
+                                <a href="{% url 'shoes:product_detail' shoe.slug %}" class="btn btn-light btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if user.is_authenticated %}
+                                <form action="{% url 'shoes:add_to_cart' shoe.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-light btn-sm" {% if shoe.stock <= 0 %}disabled{% endif %}>
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <img src="https://source.unsplash.com/300x300/?shoes,{{ shoe.name|slugify }}" class="card-img-top" alt="{{ shoe.name }}" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:100 }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="product-info">
+                            <div class="product-category text-muted mb-2">{{ shoe.category.name }}</div>
+                            <h5 class="card-title mb-2">{{ shoe.name }}</h5>
+                            <p class="card-text text-muted mb-3">{{ shoe.description|truncatewords:10 }}</p>
+                            <div class="product-price mb-3">
+                                <span class="price text-primary fw-bold">${{ shoe.price }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="categories-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Shop by Style</h2>
+            <p class="section-subtitle text-muted">Find your perfect fit</p>
+        </div>
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-md-4 col-lg-3">
+                <div class="category-card h-100" data-aos="fade-up">
+                    <div class="card-image-wrapper">
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" class="card-img-top" alt="{{ category.name }}">
+                        {% else %}
+                        <img src="https://source.unsplash.com/300x300/?shoes,{{ category.name|slugify }}" class="card-img-top" alt="{{ category.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">{{ category.name }}</h5>
+                        <p class="card-text text-muted mb-3">{{ category.description|truncatewords:50 }}</p>
+                        <a href="{% url 'shoes:shop' %}?category={{ category.slug }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-eye me-1"></i> View Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
