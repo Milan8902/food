@@ -6,6 +6,8 @@ from decimal import Decimal
 from .models import Category, Shoe, Cart, CartItem, Size, ShoeSize, ProductComparison, Review
 from django.db.models import Q
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from .forms import UserRegistrationForm
 
 def home(request):
     categories = Category.objects.all()
@@ -14,6 +16,20 @@ def home(request):
         'categories': categories,
         'featured_shoes': featured_shoes
     })
+
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Registration successful! You can now log in.')
+            return redirect('login')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'shoes/register.html', {'form': form})
 
 def shop(request):
     categories = Category.objects.all()
@@ -53,12 +69,15 @@ def product_detail(request, slug):
     
     # Calculate original price as 20% more than current price
     original_price = shoe.price * Decimal('1.20')
+    # Calculate discount percentage
+    discount_percentage = ((original_price - shoe.price) / original_price) * 100
     
     return render(request, 'product_detail.html', {
         'shoe': shoe,
         'available_sizes': available_sizes,
         'compared_products': compared_products,
-        'original_price': original_price
+        'original_price': original_price,
+        'discount_percentage': discount_percentage
     })
 
 @login_required
@@ -217,6 +236,51 @@ def add_review(request, shoe_id):
     return redirect('shoes:product_detail', shoe.slug)
 
 @login_required
+def add_to_cart(request, shoe_id):
+    if request.method == 'POST':
+        shoe = get_object_or_404(Shoe, id=shoe_id)
+        size_id = request.POST.get('size')
+        quantity = int(request.POST.get('quantity', 1))
+
+        # Get or create user's cart
+        cart, created = Cart.objects.get_or_create(user=request.user)
+
+        # Check if size exists and has enough stock
+        try:
+            shoe_size = ShoeSize.objects.get(shoe=shoe, size_id=size_id)
+            if shoe_size.stock < quantity:
+                messages.error(request, f'Only {shoe_size.stock} items available in this size')
+                return redirect('shoes:product_detail', shoe.slug)
+        except ShoeSize.DoesNotExist:
+            messages.error(request, 'Selected size is not available')
+            return redirect('shoes:product_detail', shoe.slug)
+
+        # Check if item already exists in cart
+        cart_item = CartItem.objects.filter(cart=cart, shoe=shoe, size_id=size_id).first()
+        if cart_item:
+            # Update existing cart item
+            if cart_item.quantity + quantity > shoe_size.stock:
+                messages.error(request, f'Only {shoe_size.stock - cart_item.quantity} more items available in this size')
+                return redirect('shoes:product_detail', shoe.slug)
+            cart_item.quantity += quantity
+            cart_item.save()
+        else:
+            # Create new cart item
+            CartItem.objects.create(
+                cart=cart,
+                shoe=shoe,
+                size_id=size_id,
+                quantity=quantity
+            )
+
+        # Update stock
+        shoe_size.stock -= quantity
+        shoe_size.save()
+
+        messages.success(request, f'Added {quantity} {shoe.name}(s) to cart')
+        return redirect('shoes:cart')
+
+@login_required
 def remove_from_cart(request, cart_item_id):
     cart_item = get_object_or_404(CartItem, id=cart_item_id)
     
@@ -243,6 +307,10 @@ def checkout(request):
             # For now, we'll just clear the cart
             item.delete()
         
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+        
         if request.method == 'POST':
             # Process the order
             total = sum(item.shoe.price * item.quantity for item in cart_items)
@@ -256,6 +324,7 @@ def checkout(request):
             'cart_items': cart_items,
             'total': sum(item.shoe.price * item.quantity for item in cart_items)
         })
+    
     except Cart.DoesNotExist:
         messages.error(request, 'No active cart found')
         return redirect('home')

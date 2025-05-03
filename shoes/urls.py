@@ -15,4 +15,5 @@ urlpatterns = [
     path('add-to-comparison/<int:shoe_id>/', views.add_to_comparison, name='add_to_comparison'),
     path('remove-from-comparison/<int:shoe_id>/', views.remove_from_comparison, name='remove_from_comparison'),
     path('add-review/<int:shoe_id>/', views.add_review, name='add_review'),
+    path('add-review/<int:shoe_id>/', views.add_review, name='add_review'),
 ]

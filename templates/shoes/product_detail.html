@@ -17,7 +17,26 @@
             </div>
             <div class="product-price mb-4 animate-fadeInUp">
                 <span class="price h2">${{ shoe.price }}</span>
-                <span class="original-price">$ {{ original_price }}</span>
+                {% if original_price > shoe.price %}
+                    <span class="original-price text-decoration-line-through ms-2">$ {{ original_price }}</span>
+                    <span class="discount text-success ms-2">{{ discount_percentage|floatformat:0 }}% off</span>
+                {% endif %}
+            </div>
+            
+            <!-- Social Share Buttons -->
+            <div class="social-share text-center mb-4">
+                <h5 class="mb-3">Share:</h5>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="https://facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" class="share-btn btn btn-outline-primary" target="_blank">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text=Check%20out%20this%20amazing%20shoe!" class="share-btn btn btn-outline-primary" target="_blank">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="https://pinterest.com/pin/create/button/?url={{ request.build_absolute_uri }}&media={{ shoe.image.url }}&description={{ shoe.name }}" class="share-btn btn btn-outline-primary" target="_blank">
+                        <i class="fab fa-pinterest-p"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -26,236 +45,139 @@
     <div class="row mb-5">
         <div class="col-md-6">
             <div class="product-gallery animate-fadeInUp">
-                <div class="main-image">
+                <div class="main-image position-relative">
                     {% if shoe.image %}
-                        <img src="{{ shoe.image.url }}" alt="{{ shoe.name }}" class="img-fluid">
+                        <img src="{{ shoe.image.url }}" alt="{{ shoe.name }}" class="img-fluid rounded-3">
                     {% else %}
-                        <img src="https://source.unsplash.com/500x500/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid">
+                        <img src="https://source.unsplash.com/500x500/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded-3">
                     {% endif %}
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.1);">
+                        <div class="d-flex flex-column h-100 justify-content-center">
+                            <div class="text-center">
+                                <button class="btn btn-light btn-sm rounded-pill me-2" onclick="zoomIn()">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <button class="btn btn-light btn-sm rounded-pill" onclick="rotateImage()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="thumbnail-images mt-4">
                     {% for image in shoe.additional_images.all %}
-                        <div class="thumbnail">
+                        <div class="thumbnail position-relative me-2">
                             {% if image.image %}
-                                <img src="{{ image.image.url }}" alt="{{ shoe.name }}" class="img-fluid">
+                                <img src="{{ image.image.url }}" alt="{{ shoe.name }}" class="img-fluid rounded">
                             {% else %}
-                                <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid">
+                                <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded">
                             {% endif %}
+                            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
                         </div>
                     {% endfor %}
                     <!-- Add more related images -->
-                    <div class="thumbnail">
-                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid">
+                    <div class="thumbnail position-relative me-2">
+                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded">
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
                     </div>
-                    <div class="thumbnail">
-                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}-detail" alt="{{ shoe.name }}" class="img-fluid">
+                    <div class="thumbnail position-relative">
+                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}-detail" alt="{{ shoe.name }}" class="img-fluid rounded">
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Product Info -->
+
+        <!-- Product Details -->
         <div class="col-md-6">
             <div class="product-info animate-fadeInUp">
-                <div class="product-variants mb-4">
-                    <div class="size-selector mb-4">
-                        <label class="form-label">Select Size:</label>
-                        <select name="size" class="form-select" required id="sizeSelect">
-                            <option value="">Select a size</option>
-                            {% for shoe_size in available_sizes %}
-                            <option value="{{ shoe_size.size.id }}" data-stock="{{ shoe_size.stock }}">
-                                {{ shoe_size.size.size }} - {{ shoe_size.stock }} in stock
-                            </option>
+                <!-- Product Variants -->
+                <div class="variants-section mb-4">
                             {% endfor %}
                         </select>
+                        <div id="sizeAlert" class="alert alert-warning mt-2" style="display: none;">
+                            Please select a size
+                        </div>
                     </div>
-                    <div class="color-selector mb-4">
-                        <label class="form-label">Select Color:</label>
-                        <div class="color-options">
-                            {% for color in shoe.available_colors %}
-                                <div class="color-option" data-color="{{ color }}"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <div class="d-flex gap-2">
+                            {% for color in shoe.colors.all %}
+                                <button type="button" class="btn color-btn rounded-circle" 
+                                        data-color="{{ color.name }}" 
+                                        style="background-color: {{ color.code }}; border: 2px solid #fff; width: 35px; height: 35px;"></button>
                             {% endfor %}
-                            <div class="color-option" data-color="#000000"></div>
-                            <div class="color-option" data-color="#ffffff"></div>
-                            <div class="color-option" data-color="#d62828"></div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="quantity-selector mb-4">
-                    <label class="form-label">Quantity:</label>
-                    <div class="quantity-input">
-                        <button type="button" class="quantity-btn minus" onclick="updateQuantity('decrease')">-</button>
-                        <input type="number" class="form-control" name="quantity" id="quantityInput" min="1" max="10" value="1">
-                        <button type="button" class="quantity-btn plus" onclick="updateQuantity('increase')">+</button>
-                    </div>
-                    <div class="stock-info text-muted mt-2"></div>
-                </div>
-                
-                <div class="action-buttons mb-4">
-                    <form action="{% url 'shoes:add_to_cart' shoe.id %}" method="post" class="d-inline" id="productForm">
-                        {% csrf_token %}
-                        <div class="d-flex gap-3">
-                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="addToCartBtn">
-                                <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <div class="input-group">
+                            <button class="btn btn-outline-primary rounded-0" type="button" id="decreaseQty">
+                                <i class="fas fa-minus"></i>
                             </button>
-                            <a href="{% url 'shoes:add_to_comparison' shoe.id %}" class="btn btn-outline-primary btn-lg flex-grow-1">
-                                <i class="fas fa-compare me-1"></i> Compare
-                            </a>
+                            <input type="number" class="form-control text-center border-0" id="quantity" min="1" value="1" max="10">
+                            <button class="btn btn-outline-primary rounded-0" type="button" id="increaseQty">
+                                <i class="fas fa-plus"></i>
+                            </button>
                         </div>
-                    </form>
-                    <a href="{% url 'shoes:add_to_comparison' shoe.id %}" class="btn btn-outline-primary btn-lg">Compare</a>
-                </div>
-                
-                <div class="social-share">
-                    <h5>Share:</h5>
-                    <div class="share-buttons">
-                        <a href="#" class="share-btn facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="share-btn twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="share-btn instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="share-btn pinterest"><i class="fab fa-pinterest-p"></i></a>
+                    </div>
+                    <div class="mb-4">
+                        <button id="addToCart" class="btn btn-primary btn-lg w-100" disabled>Add to Cart</button>
+                        <button id="addToWishlist" class="btn btn-outline-secondary btn-lg w-100 mt-2">
+                            <i class="fas fa-heart me-2"></i>Add to Wishlist
+                        </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Product Tabs -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="product-tabs animate-fadeInUp">
-                <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="description-tab" data-bs-toggle="tab" href="#description" role="tab">Description</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="specifications-tab" data-bs-toggle="tab" href="#specifications" role="tab">Specifications</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab">Reviews</a>
-                    </li>
-                </ul>
-                
-                <div class="tab-content" id="productTabsContent">
-                    <div class="tab-pane fade show active" id="description" role="tabpanel">
-                        <div class="product-description-content">
-                            <p class="lead">{{ shoe.description }}</p>
-                            <div class="features-list">
-                                <h5>Key Features:</h5>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-check text-success me-2"></i> {{ shoe.material }} upper</li>
-                                    <li><i class="fas fa-check text-success me-2"></i> {{ shoe.weight }}g lightweight</li>
-                                    <li><i class="fas fa-check text-success me-2"></i> {{ shoe.category }} category</li>
-                                    <li><i class="fas fa-check text-success me-2"></i> Available in multiple colors</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="tab-pane fade" id="specifications" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table">
-                                <tbody>
-                                    <tr>
-                                        <th>Brand</th>
-                                        <td>{{ shoe.brand }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Category</th>
-                                        <td>{{ shoe.category }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Material</th>
-                                        <td>{{ shoe.material }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Color</th>
-                                        <td>{{ shoe.color }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Weight</th>
-                                        <td>{{ shoe.weight }}g</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Size Range</th>
-                                        <td>{{ shoe.min_size }} - {{ shoe.max_size }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Gender</th>
-                                        <td>{{ shoe.gender }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="tab-pane fade" id="reviews" role="tabpanel">
-                        <div class="reviews-section">
-                            <div class="review-rating-summary mb-4">
-                                <div class="rating-stars">
-                                    {% for i in '12345' %}
-                                        <i class="fas fa-star{% if shoe.rating < forloop.counter %}-o{% endif %}"></i>
-                                    {% endfor %}
-                                </div>
-                                <span class="rating-count">({{ shoe.reviews.count }} reviews)</span>
-                            </div>
-                            
-                            <div class="review-list">
-                                {% for review in shoe.reviews.all %}
-                                    <div class="review-card mb-4">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h5 class="review-author">{{ review.user.username }}</h5>
-                                                <div class="rating-stars">
-                                                    {% for i in '12345' %}
-                                                        <i class="fas fa-star{% if review.rating < forloop.counter %}-o{% endif %}"></i>
-                                                    {% endfor %}
-                                                </div>
-                                                <p class="review-date">{{ review.created_at }}</p>
-                                                <p class="review-text">{{ review.comment }}</p>
-                                            </div>
-                                            <div class="review-actions">
-                                                {% if user.is_authenticated and user == review.user %}
-                                                    <a href="#" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                                    <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% empty %}
-                                    <p class="text-center">No reviews yet. Be the first to review this product!</p>
-                                {% endfor %}
-                            </div>
-
-                            {% if user.is_authenticated %}
-                            <div class="review-form mt-4">
-                                <h4>Add Your Review</h4>
-                                <form method="post" action="{% url 'add_review' shoe.id %}" class="needs-validation" novalidate>
-                                    {% csrf_token %}
-                                    <div class="mb-3">
-                                        <label class="form-label">Rating</label>
-                                        <select class="form-select" name="rating" required>
-                                            <option value="">Select Rating</option>
-                                            <option value="1">1 Star</option>
-                                            <option value="2">2 Stars</option>
-                                            <option value="3">3 Stars</option>
-                                            <option value="4">4 Stars</option>
-                                            <option value="5">5 Stars</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Your Review</label>
-                                        <textarea class="form-control" name="comment" rows="4" required></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Submit Review</button>
-                                </form>
-                            </div>
-                            {% else %}
-                            <div class="text-center mt-4">
-                                <p>Please <a href="{% url 'login' %}">login</a> to write a review.</p>
-                            </div>
-                            {% endif %}
-                        </div>
+                <div class="product-description mb-4">
+                    <h4 class="mb-3">Description</h4>
+                    <p class="mb-0">{{ shoe.description }}</p>
+                    <button class="btn btn-link p-0" id="toggleDescription">
+                        <i class="fas fa-chevron-down"></i> Show more
+                    </button>
+                </div>
+                <div class="product-specs mb-4">
+                    <h4 class="mb-3">Specifications</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>Brand</th>
+                                    <td>{{ shoe.brand }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Category</th>
+                                    <td>{{ shoe.category.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Gender</th>
+                                    <td>{{ shoe.get_gender_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Colors Available</th>
+                                    <td>
+                                        {% for color in shoe.colors.all %}
+                                            <span class="badge bg-secondary me-2" style="background-color: {{ color.code }};">{{ color.name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Sizes Available</th>
+                                    <td>
+                                        {% for size in available_sizes %}
+                                            <span class="badge bg-secondary me-2">{{ size.size }}</span>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Material</th>
+                                    <td>{{ shoe.material }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Weight</th>
+                                    <td>{{ shoe.weight }} oz</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -267,22 +189,28 @@
         <div class="col-12">
             <h3 class="mb-4">Related Products</h3>
             <div class="row g-4">
-                {% for related in related_products %}
+                {% for related in compared_products %}
                     <div class="col-md-3">
-                        <div class="product-card">
-                            <img src="{{ related.image.url }}" alt="{{ related.name }}" class="product-card-img-top">
-                            <div class="product-card-body">
-                                <h5 class="product-card-title">{{ related.name }}</h5>
-                                <div class="product-card-rating">
+                        <div class="card h-100 shadow-sm">
+                            <img src="{{ related.image.url }}" class="card-img-top" alt="{{ related.name }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ related.name }}</h5>
+                                <div class="product-rating mb-2">
                                     <div class="rating-stars">
                                         {% for i in '12345' %}
-                                            <i class="fas fa-star{% if related.rating < forloop.counter %}-o{% endif %}"></i>
+                                            <i class="fas fa-star{% if related.rating < forloop.counter %}-o{% endif %}" aria-hidden="true"></i>
                                         {% endfor %}
                                     </div>
-                                    <span class="rating-count">({{ related.reviews.count }})</span>
+                                    <span class="rating-count">({{ related.reviews.count }} reviews)</span>
                                 </div>
-                                <p class="product-card-text">${{ related.price }}</p>
-                                <div class="product-card-actions">
+                                <div class="product-price">
+                                    <span class="price h5">${{ related.price }}</span>
+                                    {% if related.original_price > related.price %}
+                                        <span class="original-price text-decoration-line-through ms-2">$ {{ related.original_price }}</span>
+                                        <span class="discount text-success ms-2">{{ related.discount_percentage|floatformat:0 }}% off</span>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-3">
                                     <a href="{% url 'product_detail' related.slug %}" class="btn btn-outline-primary btn-sm">View Details</a>
                                     <a href="{% url 'add_to_cart' related.id %}" class="btn btn-outline-secondary btn-sm">Add to Cart</a>
                                 </div>
@@ -294,19 +222,103 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
 
 {% block extra_js %}
-    <script src="{% static 'js/home.js' %}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sizeSelect = document.getElementById('sizeSelect');
-            const quantityInput = document.getElementById('quantityInput');
-            const addToCartBtn = document.getElementById('addToCartBtn');
-            const form = document.getElementById('productForm');
-            
-            if (!sizeSelect || !quantityInput || !addToCartBtn) return;
+<script>
+// Initialize color buttons
+const colorButtons = document.querySelectorAll('.color-btn');
+const selectedColorInput = document.getElementById('selectedColor');
 
+// Add click event to each color button
+Array.from(colorButtons).forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove active class from all buttons
+        Array.from(colorButtons).forEach(btn => btn.classList.remove('active'));
+        // Add active class to clicked button
+        this.classList.add('active');
+        // Set selected color
+        selectedColorInput.value = this.dataset.color;
+        // Enable add to cart button
+        enableAddToCartButton();
+    });
+});
+
+// Handle size selection
+const sizeSelect = document.getElementById('sizeSelect');
+const sizeAlert = document.getElementById('sizeAlert');
+
+sizeSelect.addEventListener('change', function() {
+    if (this.value) {
+        sizeAlert.style.display = 'none';
+        enableAddToCartButton();
+    } else {
+        sizeAlert.style.display = 'block';
+    }
+});
+
+// Handle quantity buttons
+const quantityInput = document.getElementById('quantity');
+const decreaseQty = document.getElementById('decreaseQty');
+const increaseQty = document.getElementById('increaseQty');
+
+function updateQuantity(value) {
+    quantityInput.value = Math.max(1, value);
+}
+
+decreaseQty.addEventListener('click', () => {
+    updateQuantity(quantityInput.value - 1);
+});
+
+increaseQty.addEventListener('click', () => {
+    updateQuantity(parseInt(quantityInput.value) + 1);
+});
+
+// Handle add to cart button
+const addToCartBtn = document.getElementById('addToCart');
+const addToWishlistBtn = document.getElementById('addToWishlist');
+
+function enableAddToCartButton() {
+    const selectedSize = sizeSelect.value;
+    const selectedColor = selectedColorInput.value;
+    addToCartBtn.disabled = !(selectedSize && selectedColor);
+}
+
+// Handle description toggle
+const toggleDescriptionBtn = document.getElementById('toggleDescription');
+const description = document.querySelector('.product-description p');
+
+let isExpanded = false;
+toggleDescriptionBtn.addEventListener('click', () => {
+    isExpanded = !isExpanded;
+    description.style.maxHeight = isExpanded ? 'none' : '100px';
+    toggleDescriptionBtn.innerHTML = `<i class="fas fa-chevron-${isExpanded ? 'up' : 'down'}"></i> ${isExpanded ? 'Show less' : 'Show more'}`;
+});
+
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+// Initialize AOS animations
+AOS.init({
+    duration: 800,
+    once: true
+});
+</script>
+{% endblock extra_js %}
+$(document).ready(function() {
+    // Your initialization code here
+    const sizeSelect = document.getElementById('sizeSelect');
+    const quantityInput = document.getElementById('quantityInput');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    const form = document.getElementById('productForm');
+            
+    if (!sizeSelect || !quantityInput || !addToCartBtn) return;
+
+    // Initialize form
+    updateFormState();
             // Initialize form
             updateFormState();
 
@@ -391,4 +403,3 @@
         });
     </script>
     <script src="{% static 'js/product-detail.js' %}"></script>
-{% endblock %}
