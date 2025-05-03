@@ -93,6 +93,14 @@
             <div class="product-info animate-fadeInUp">
                 <!-- Product Variants -->
                 <div class="variants-section mb-4">
+                    <div class="size-selector mb-4">
+                        <label class="form-label">Select Size:</label>
+                        <select name="size" class="form-select form-select-lg mb-3" required id="sizeSelect">
+                            <option value="" disabled selected>Select a size</option>
+                            {% for shoe_size in available_sizes %}
+                            <option value="{{ shoe_size.size.id }}" data-stock="{{ shoe_size.stock }}" {% if shoe_size.stock <= 0 %}disabled{% endif %}>
+                                {{ shoe_size.size.size }}{% if shoe_size.stock <= 0 %} (Out of Stock){% else %} ({{ shoe_size.stock }} in stock){% endif %}
+                            </option>
                             {% endfor %}
                         </select>
                         <div id="sizeAlert" class="alert alert-warning mt-2" style="display: none;">
