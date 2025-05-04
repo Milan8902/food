@@ -7,10 +7,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0">Shopping Cart</h2>
                 <div class="d-flex gap-3">
-                    <a href="{% url 'shop' %}" class="btn btn-outline-primary">
+                    <a href="{% url 'shoes:shop' %}" class="btn btn-outline-primary">
                         <i class="fas fa-arrow-left me-2"></i>Continue Shopping
                     </a>
-                    <a href="{% url 'checkout' %}" class="btn btn-primary">
+                    <a href="{% url 'shoes:checkout' %}" class="btn btn-primary">
                         <i class="fas fa-shopping-bag me-2"></i>Proceed to Checkout
                     </a>
                 </div>
@@ -18,6 +18,54 @@
 
             {% if cart_items %}
             <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Size</th>
+                            <th>Color</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Subtotal</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart_items %}
+                        <tr id="cart-item-{{ item.id }}">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ item.shoe.image.url }}" alt="{{ item.shoe.name }}" class="img-thumbnail" style="width: 50px; height: 50px;">
+                                    <span class="ms-2">{{ item.shoe.name }}</span>
+                                </div>
+                            </td>
+                            <td>{{ item.size }}</td>
+                            <td>{{ item.color }}</td>
+                            <td class="price">${{ item.shoe.price }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity('{{ item.id }}', 'decrease')">-</button>
+                                    <input type="number" class="form-control form-control-sm" value="{{ item.quantity }}" onchange="updateQuantity('{{ item.id }}', this.value)">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateQuantity('{{ item.id }}', 'increase')">+</button>
+                                </div>
+                            </td>
+                            <td class="subtotal">${{ item.shoe.price }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="removeItem('{{ item.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">Total:</td>
+                            <td colspan="2" class="total">${{ total }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
@@ -95,7 +143,7 @@
                 <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
                 <h3>Your cart is empty</h3>
                 <p class="text-muted mb-4">Add some items to your cart to get started.</p>
-                <a href="{% url 'shop' %}" class="btn btn-primary">
+                <a href="{% url 'shoes:shop' %}" class="btn btn-primary">
                     <i class="fas fa-shopping-bag me-2"></i>Shop Now
                 </a>
             </div>
@@ -141,7 +189,7 @@
         if (confirm('Are you sure you want to remove this item?')) {
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `{% url 'remove_from_cart' 0 %}`.replace('0', itemId);
+            form.action = `{% url 'shoes:remove_from_cart' 0 %}`.replace('0', itemId);
             form.innerHTML = `
                 {% csrf_token %}
                 <input type="hidden" name="cart_item_id" value="${itemId}">

@@ -58,8 +58,11 @@ def shop(request):
 def product_detail(request, slug):
     shoe = get_object_or_404(Shoe, slug=slug)
     
-    # Get available sizes for this shoe
-    available_sizes = ShoeSize.objects.filter(shoe=shoe, stock__gt=0)
+    # Get all sizes for this shoe with stock information
+    available_sizes = ShoeSize.objects.filter(shoe=shoe)
+    
+    # Get all colors for this shoe with stock information
+    available_colors = ShoeColor.objects.filter(shoe=shoe)
     
     # Get compared products for logged-in users
     compared_products = []
@@ -75,6 +78,7 @@ def product_detail(request, slug):
     return render(request, 'product_detail.html', {
         'shoe': shoe,
         'available_sizes': available_sizes,
+        'available_colors': available_colors,
         'compared_products': compared_products,
         'original_price': original_price,
         'discount_percentage': discount_percentage

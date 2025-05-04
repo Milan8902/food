@@ -1,231 +1,419 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/product-detail.css' %}">
+<style>
+    :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #357abd;
+        --light-gray: #f8f9fa;
+        --medium-gray: #dee2e6;
+        --dark-gray: #343a40;
+        --text-color: #212529;
+        --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Product Hero Section */
+    .product-hero {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 4rem 0;
+        border-radius: 15px;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('https://source.unsplash.com/1920x1080/?shoes,{{ shoe.name|slugify }}') center/cover;
+        opacity: 0.1;
+        z-index: 1;
+    }
+
+    .product-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Product Gallery */
+    .product-gallery {
+        background: white;
+        border-radius: 15px;
+        box-shadow: var(--shadow-md);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .thumbnail-gallery {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .thumbnail-item {
+        flex: 1;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .thumbnail-item:hover {
+        transform: scale(1.1);
+    }
+
+    /* Product Info */
+    .product-info {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Variants Section */
+    .variants-section {
+        background: var(--light-gray);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+
+    .size-selector, .color-selector {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    /* Color Buttons */
+    .color-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        border: 2px solid var(--medium-gray);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .color-btn.active {
+        border-color: var(--primary-color);
+        transform: scale(1.1);
+    }
+
+    /* Quantity Controls */
+    .quantity-input-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quantity-input {
+        background: var(--light-gray);
+        border: 1px solid var(--medium-gray);
+        border-radius: 8px;
+        padding: 0.5rem;
+        text-align: center;
+        width: 80px;
+        font-weight: 500;
+    }
+
+    .btn-quantity {
+        background: var(--light-gray);
+        border: 1px solid var(--medium-gray);
+        border-radius: 8px;
+        padding: 0.5rem;
+        cursor: pointer;
+    }
+
+    .btn-quantity:hover {
+        background: var(--medium-gray);
+    }
+
+    /* Add to Cart Button */
+    .add-to-cart-btn {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .add-to-cart-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+    }
+
+    /* Product Description */
+    .product-description {
+        background: var(--light-gray);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+    }
+
+    .description-content {
+        max-height: 100px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .description-content.expanded {
+        max-height: none;
+    }
+
+    /* Related Products */
+    .related-products {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 3rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .product-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    /* Animations */
+    .animate-fadeInUp {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.6s ease;
+    }
+
+    .animate-fadeInUp.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Rating Stars */
+    .rating-stars {
+        color: #ffd700;
+    }
+
+    .rating-stars i {
+        margin-right: 2px;
+    }
+
+    .rating-stars i:last-child {
+        margin-right: 0;
+    }
+
+    /* Price Styling */
+    .original-price {
+        color: var(--dark-gray);
+        font-size: 0.9rem;
+    }
+
+    .discount {
+        color: #28a745;
+        font-size: 0.9rem;
+    }
+
+    /* Share Buttons */
+    .share-btn {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .share-btn:hover {
+        color: var(--secondary-color);
+    }
+
+    .share-btn i {
+        font-size: 1.2rem;
+    }
+
+    /* Size Alert */
+    .size-alert {
+        background: #fff3cd;
+        color: #856404;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.25rem;
+        margin-top: 0.5rem;
+        display: none;
+    }
+
+    .size-alert.show {
+        display: block;
+    }
+
+    /* Tooltip Styling */
+    .tooltip {
+        background: var(--primary-color) !important;
+        color: white !important;
+    }
+
+    .tooltip.show {
+        opacity: 1 !important;
+    }
+</style>
+{% endblock extra_css %}
 
 {% block content %}
-<div class="container py-5">
-    <!-- Product Hero Section -->
-    <div class="row mb-5">
-        <div class="col-12 text-center">
-            <h1 class="display-4 fw-bold mb-3 animate-fadeInUp">{{ shoe.name }}</h1>
-            <div class="product-rating mb-3 animate-fadeInUp">
-                <div class="rating-stars">
-                    {% for i in '12345' %}
-                        <i class="fas fa-star{% if shoe.rating < forloop.counter %}-o{% endif %}" aria-hidden="true"></i>
-                    {% endfor %}
-                </div>
-                <span class="rating-count">({{ shoe.reviews.count }} reviews)</span>
-            </div>
-            <div class="product-price mb-4 animate-fadeInUp">
-                <span class="price h2">${{ shoe.price }}</span>
-                {% if original_price > shoe.price %}
-                    <span class="original-price text-decoration-line-through ms-2">$ {{ original_price }}</span>
-                    <span class="discount text-success ms-2">{{ discount_percentage|floatformat:0 }}% off</span>
-                {% endif %}
-            </div>
-            
-            <!-- Social Share Buttons -->
-            <div class="social-share text-center mb-4">
-                <h5 class="mb-3">Share:</h5>
-                <div class="d-flex justify-content-center gap-3">
-                    <a href="https://facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" class="share-btn btn btn-outline-primary" target="_blank">
-                        <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text=Check%20out%20this%20amazing%20shoe!" class="share-btn btn btn-outline-primary" target="_blank">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="https://pinterest.com/pin/create/button/?url={{ request.build_absolute_uri }}&media={{ shoe.image.url }}&description={{ shoe.name }}" class="share-btn btn btn-outline-primary" target="_blank">
-                        <i class="fab fa-pinterest-p"></i>
-                    </a>
+<div class="container mt-5">
+    <div class="row">
+        <!-- Product Hero Section -->
+        <div class="col-12 mb-5">
+            <div class="product-hero">
+                <div class="product-hero-content text-center">
+                    <h1 class="display-4 mb-3">{{ shoe.name }}</h1>
+                    <div class="rating-stars">
+                        {% for i in "12345" %}
+                            <i class="fas fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="lead text-muted">{{ shoe.description|truncatewords:20 }}</p>
+                    <div class="d-flex justify-content-center align-items-center gap-3">
+                        <span class="h3 text-dark">${{ shoe.price }}</span>
+                        {% if shoe.discount_price %}
+                            <span class="original-price">${{ shoe.original_price }}</span>
+                            <span class="discount">{{ shoe.discount }}% off</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Product Gallery -->
-    <div class="row mb-5">
-        <div class="col-md-6">
-            <div class="product-gallery animate-fadeInUp">
-                <div class="main-image position-relative">
-                    {% if shoe.image %}
-                        <img src="{{ shoe.image.url }}" alt="{{ shoe.name }}" class="img-fluid rounded-3">
-                    {% else %}
-                        <img src="https://source.unsplash.com/500x500/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded-3">
-                    {% endif %}
-                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.1);">
-                        <div class="d-flex flex-column h-100 justify-content-center">
-                            <div class="text-center">
-                                <button class="btn btn-light btn-sm rounded-pill me-2" onclick="zoomIn()">
-                                    <i class="fas fa-search-plus"></i>
-                                </button>
-                                <button class="btn btn-light btn-sm rounded-pill" onclick="rotateImage()">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Product Gallery -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-gallery">
+                <div class="main-image">
+                    <img src="{% if shoe.image %}{{ shoe.image.url }}{% else %}https://via.placeholder.com/500x500?text={{ shoe.name|truncatechars:10|slugify }}{% endif %}" alt="{{ shoe.name }}" class="img-fluid">
                 </div>
-                <div class="thumbnail-images mt-4">
+                <div class="thumbnail-gallery">
                     {% for image in shoe.additional_images.all %}
-                        <div class="thumbnail position-relative me-2">
-                            {% if image.image %}
-                                <img src="{{ image.image.url }}" alt="{{ shoe.name }}" class="img-fluid rounded">
-                            {% else %}
-                                <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded">
-                            {% endif %}
-                            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
+                        <div class="thumbnail-item">
+                            <img src="{% if image.image %}{{ image.image.url }}{% else %}https://via.placeholder.com/300x300?text={{ shoe.name|truncatechars:10|slugify }}{% endif %}" alt="{{ shoe.name }}" class="img-fluid">
                         </div>
                     {% endfor %}
-                    <!-- Add more related images -->
-                    <div class="thumbnail position-relative me-2">
-                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}" alt="{{ shoe.name }}" class="img-fluid rounded">
-                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
-                    </div>
-                    <div class="thumbnail position-relative">
-                        <img src="https://source.unsplash.com/300x200/?shoes,{{ shoe.name|slugify }}-detail" alt="{{ shoe.name }}" class="img-fluid rounded">
-                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.2);"></div>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Product Details -->
-        <div class="col-md-6">
-            <div class="product-info animate-fadeInUp">
-                <!-- Product Variants -->
-                <div class="variants-section mb-4">
-                    <div class="size-selector mb-4">
-                        <label class="form-label">Select Size:</label>
-                        <select name="size" class="form-select form-select-lg mb-3" required id="sizeSelect">
-                            <option value="" disabled selected>Select a size</option>
-                            {% for shoe_size in available_sizes %}
-                            <option value="{{ shoe_size.size.id }}" data-stock="{{ shoe_size.stock }}" {% if shoe_size.stock <= 0 %}disabled{% endif %}>
-                                {{ shoe_size.size.size }}{% if shoe_size.stock <= 0 %} (Out of Stock){% else %} ({{ shoe_size.stock }} in stock){% endif %}
-                            </option>
+        <!-- Product Info -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-info">
+                <h2 class="h4 mb-4">Product Details</h2>
+                
+                <!-- Variants Section -->
+                <div class="variants-section">
+                    <div class="size-selector">
+                        <h5 class="h6 mb-3">Select Size</h5>
+                        <select class="form-select" id="sizeSelect">
+                            <option value="">Select Size</option>
+                            {% for size in shoe.available_sizes.all %}
+                                <option value="{{ size.size }}" {% if size.stock <= 0 %}disabled{% endif %}>{{ size.size }}{% if size.stock <= 0 %} (Out of Stock){% endif %}</option>
                             {% endfor %}
                         </select>
-                        <div id="sizeAlert" class="alert alert-warning mt-2" style="display: none;">
-                            Please select a size
-                        </div>
+                        <div class="size-alert">Please select a size</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Color</label>
+
+                    <div class="color-selector">
+                        <h5 class="h6 mb-3">Select Color</h5>
                         <div class="d-flex gap-2">
-                            {% for color in shoe.colors.all %}
-                                <button type="button" class="btn color-btn rounded-circle" 
-                                        data-color="{{ color.name }}" 
-                                        style="background-color: {{ color.code }}; border: 2px solid #fff; width: 35px; height: 35px;"></button>
+                            {% for color in available_colors %}
+                                <button class="color-btn" 
+                                       style="background-color: {{ color.color.code }}" 
+                                       data-color="{{ color.color.name }}"
+                                       {% if color.stock <= 0 %}disabled{% endif %}>
+                                </button>
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="quantity" class="form-label">Quantity</label>
-                        <div class="input-group">
-                            <button class="btn btn-outline-primary rounded-0" type="button" id="decreaseQty">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" class="form-control text-center border-0" id="quantity" min="1" value="1" max="10">
-                            <button class="btn btn-outline-primary rounded-0" type="button" id="increaseQty">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <button id="addToCart" class="btn btn-primary btn-lg w-100" disabled>Add to Cart</button>
-                        <button id="addToWishlist" class="btn btn-outline-secondary btn-lg w-100 mt-2">
-                            <i class="fas fa-heart me-2"></i>Add to Wishlist
-                        </button>
-                    </div>
                 </div>
-                <div class="product-description mb-4">
-                    <h4 class="mb-3">Description</h4>
-                    <p class="mb-0">{{ shoe.description }}</p>
-                    <button class="btn btn-link p-0" id="toggleDescription">
-                        <i class="fas fa-chevron-down"></i> Show more
-                    </button>
+
+                <!-- Quantity Controls -->
+                <div class="quantity-input-group mb-4">
+                    <button class="btn-quantity" id="decreaseQty">-</button>
+                    <input type="number" id="quantity" class="quantity-input" value="1" min="1">
+                    <button class="btn-quantity" id="increaseQty">+</button>
                 </div>
-                <div class="product-specs mb-4">
-                    <h4 class="mb-3">Specifications</h4>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <tbody>
-                                <tr>
-                                    <th>Brand</th>
-                                    <td>{{ shoe.brand }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Category</th>
-                                    <td>{{ shoe.category.name }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Gender</th>
-                                    <td>{{ shoe.get_gender_display }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Colors Available</th>
-                                    <td>
-                                        {% for color in shoe.colors.all %}
-                                            <span class="badge bg-secondary me-2" style="background-color: {{ color.code }};">{{ color.name }}</span>
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Sizes Available</th>
-                                    <td>
-                                        {% for size in available_sizes %}
-                                            <span class="badge bg-secondary me-2">{{ size.size }}</span>
-                                        {% endfor %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Material</th>
-                                    <td>{{ shoe.material }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Weight</th>
-                                    <td>{{ shoe.weight }} oz</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
+                <!-- Add to Cart -->
+                <button class="add-to-cart-btn" id="addToCartBtn" data-product-id="{{ shoe.id }}">
+                    Add to Cart
+                </button>
+
+                <!-- Share Buttons -->
+                <div class="d-flex gap-3 mt-4">
+                    <a href="#" class="share-btn">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="share-btn">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="share-btn">
+                        <i class="fab fa-pinterest"></i>
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Related Products -->
-    <div class="row mb-5">
+        <!-- Product Description -->
+        <div class="col-12 mb-4">
+            <div class="product-description">
+                <h2 class="h4 mb-3">Product Description</h2>
+                <button id="descriptionToggle" class="btn btn-link text-decoration-none">
+                    Read More
+                </button>
+                <div class="description-content">
+                    {{ shoe.description|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Products -->
         <div class="col-12">
-            <h3 class="mb-4">Related Products</h3>
-            <div class="row g-4">
-                {% for related in compared_products %}
-                    <div class="col-md-3">
-                        <div class="card h-100 shadow-sm">
-                            <img src="{{ related.image.url }}" class="card-img-top" alt="{{ related.name }}">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ related.name }}</h5>
-                                <div class="product-rating mb-2">
+            <div class="related-products">
+                <h2 class="h4 mb-4">Related Products</h2>
+                <div class="row g-4">
+                    {% for related in related_products %}
+                        <div class="col-md-6 col-lg-3">
+                            <div class="product-card">
+                                <img src="{{ related.image.url }}" alt="{{ related.name }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ related.name }}</h5>
                                     <div class="rating-stars">
-                                        {% for i in '12345' %}
-                                            <i class="fas fa-star{% if related.rating < forloop.counter %}-o{% endif %}" aria-hidden="true"></i>
+                                        {% for i in "12345" %}
+                                            <i class="fas fa-star"></i>
                                         {% endfor %}
                                     </div>
-                                    <span class="rating-count">({{ related.reviews.count }} reviews)</span>
-                                </div>
-                                <div class="product-price">
-                                    <span class="price h5">${{ related.price }}</span>
-                                    {% if related.original_price > related.price %}
-                                        <span class="original-price text-decoration-line-through ms-2">$ {{ related.original_price }}</span>
-                                        <span class="discount text-success ms-2">{{ related.discount_percentage|floatformat:0 }}% off</span>
-                                    {% endif %}
-                                </div>
-                                <div class="mt-3">
-                                    <a href="{% url 'product_detail' related.slug %}" class="btn btn-outline-primary btn-sm">View Details</a>
-                                    <a href="{% url 'add_to_cart' related.id %}" class="btn btn-outline-secondary btn-sm">Add to Cart</a>
+                                    <p class="card-text">{{ related.description|truncatewords:10 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="h5">${{ related.price }}</span>
+                                        <a href="{{ related.get_absolute_url }}" class="btn btn-primary">View Details</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -234,180 +422,120 @@
 
 {% block extra_js %}
 <script>
-// Initialize color buttons
-const colorButtons = document.querySelectorAll('.color-btn');
-const selectedColorInput = document.getElementById('selectedColor');
+    document.addEventListener('DOMContentLoaded', function() {
+        const quantityInput = document.getElementById('quantity');
+        const decreaseBtn = document.getElementById('decreaseQty');
+        const increaseBtn = document.getElementById('increaseQty');
+        const sizeSelect = document.getElementById('sizeSelect');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const sizeAlert = document.querySelector('.size-alert');
+        const descriptionToggle = document.getElementById('descriptionToggle');
+        const descriptionContent = document.querySelector('.description-content');
 
-// Add click event to each color button
-Array.from(colorButtons).forEach(button => {
-    button.addEventListener('click', function() {
-        // Remove active class from all buttons
-        Array.from(colorButtons).forEach(btn => btn.classList.remove('active'));
-        // Add active class to clicked button
-        this.classList.add('active');
-        // Set selected color
-        selectedColorInput.value = this.dataset.color;
-        // Enable add to cart button
-        enableAddToCartButton();
+        // Quantity controls
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', function() {
+                let value = parseInt(quantityInput.value);
+                if (value > 1) {
+                    quantityInput.value = value - 1;
+                }
+            });
+        }
+
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', function() {
+                let value = parseInt(quantityInput.value);
+                quantityInput.value = value + 1;
+            });
+        }
+
+        // Color selection
+        const colorBtns = document.querySelectorAll('.color-btn');
+        colorBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                colorBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Description toggle
+        if (descriptionToggle && descriptionContent) {
+            descriptionToggle.addEventListener('click', function() {
+                descriptionContent.classList.toggle('expanded');
+                this.textContent = descriptionContent.classList.contains('expanded') ? 'Read Less' : 'Read More';
+            });
+        }
+
+        // Size selection validation
+        if (sizeSelect && addToCartBtn) {
+            sizeSelect.addEventListener('change', function() {
+                const selectedSize = this.value;
+                
+                if (selectedSize) {
+                    sizeAlert.style.display = 'none';
+                    addToCartBtn.disabled = false;
+                } else {
+                    sizeAlert.style.display = 'block';
+                    addToCartBtn.disabled = true;
+                }
+            });
+        }
+
+        // Add to Cart button click
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', function() {
+                const size = sizeSelect.value;
+                const color = document.querySelector('.color-btn.active');
+                const quantity = quantityInput.value;
+                
+                if (!size || !color) {
+                    alert('Please select both size and color');
+                    return;
+                }
+
+                // Make AJAX request to add to cart
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                formData.append('shoe_id', this.dataset.productId);
+                formData.append('size', size);
+                formData.append('color', color.dataset.color);
+                formData.append('quantity', quantity);
+
+                fetch(`{% url 'shoes:add_to_cart' shoe_id=0 %}`.replace('0', this.dataset.productId), {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Product added to cart successfully!');
+                        // Optionally update cart count in UI
+                        const cartCount = document.querySelector('.cart-count');
+                        if (cartCount) {
+                            cartCount.textContent = data.cart_count;
+                        }
+                    } else {
+                        alert('Error adding product to cart: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while adding to cart');
+                });
+            });
+        }
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Initialize AOS animations
+        AOS.init({
+            duration: 800,
+            once: true
+        });
     });
-});
-
-// Handle size selection
-const sizeSelect = document.getElementById('sizeSelect');
-const sizeAlert = document.getElementById('sizeAlert');
-
-sizeSelect.addEventListener('change', function() {
-    if (this.value) {
-        sizeAlert.style.display = 'none';
-        enableAddToCartButton();
-    } else {
-        sizeAlert.style.display = 'block';
-    }
-});
-
-// Handle quantity buttons
-const quantityInput = document.getElementById('quantity');
-const decreaseQty = document.getElementById('decreaseQty');
-const increaseQty = document.getElementById('increaseQty');
-
-function updateQuantity(value) {
-    quantityInput.value = Math.max(1, value);
-}
-
-decreaseQty.addEventListener('click', () => {
-    updateQuantity(quantityInput.value - 1);
-});
-
-increaseQty.addEventListener('click', () => {
-    updateQuantity(parseInt(quantityInput.value) + 1);
-});
-
-// Handle add to cart button
-const addToCartBtn = document.getElementById('addToCart');
-const addToWishlistBtn = document.getElementById('addToWishlist');
-
-function enableAddToCartButton() {
-    const selectedSize = sizeSelect.value;
-    const selectedColor = selectedColorInput.value;
-    addToCartBtn.disabled = !(selectedSize && selectedColor);
-}
-
-// Handle description toggle
-const toggleDescriptionBtn = document.getElementById('toggleDescription');
-const description = document.querySelector('.product-description p');
-
-let isExpanded = false;
-toggleDescriptionBtn.addEventListener('click', () => {
-    isExpanded = !isExpanded;
-    description.style.maxHeight = isExpanded ? 'none' : '100px';
-    toggleDescriptionBtn.innerHTML = `<i class="fas fa-chevron-${isExpanded ? 'up' : 'down'}"></i> ${isExpanded ? 'Show less' : 'Show more'}`;
-});
-
-// Initialize tooltips
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-});
-
-// Initialize AOS animations
-AOS.init({
-    duration: 800,
-    once: true
-});
 </script>
 {% endblock extra_js %}
-$(document).ready(function() {
-    // Your initialization code here
-    const sizeSelect = document.getElementById('sizeSelect');
-    const quantityInput = document.getElementById('quantityInput');
-    const addToCartBtn = document.getElementById('addToCartBtn');
-    const form = document.getElementById('productForm');
-            
-    if (!sizeSelect || !quantityInput || !addToCartBtn) return;
-
-    // Initialize form
-    updateFormState();
-            // Initialize form
-            updateFormState();
-
-            // Size change handler
-            sizeSelect.addEventListener('change', function() {
-                updateFormState();
-            });
-
-            // Quantity input change handler
-            quantityInput.addEventListener('change', function() {
-                updateFormState();
-            });
-
-            // Quantity buttons
-            document.querySelectorAll('.quantity-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const action = this.classList.contains('plus') ? 'increase' : 'decrease';
-                    updateQuantity(action);
-                });
-            });
-
-            // Form submission handler
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    if (!validateForm()) {
-                        e.preventDefault();
-                    }
-                });
-            }
-
-            function updateFormState() {
-                const selectedSize = sizeSelect.options[sizeSelect.selectedIndex];
-                const stock = parseInt(selectedSize.dataset.stock);
-                const quantity = parseInt(quantityInput.value);
-
-                // Update quantity input max value
-                quantityInput.max = stock;
-
-                // Update quantity if it exceeds stock
-                if (quantity > stock) {
-                    quantityInput.value = stock;
-                }
-
-                // Update button state
-                addToCartBtn.disabled = !selectedSize.value || quantity > stock;
-
-                // Update quantity display
-                document.querySelector('.stock-info').textContent = 
-                    `Available: ${stock} | Selected: ${quantity}`;
-            }
-
-            function updateQuantity(action) {
-                const quantity = parseInt(quantityInput.value);
-                const stock = parseInt(sizeSelect.options[sizeSelect.selectedIndex].dataset.stock);
-
-                if (action === 'increase' && quantity < stock) {
-                    quantityInput.value = quantity + 1;
-                } else if (action === 'decrease' && quantity > 1) {
-                    quantityInput.value = quantity - 1;
-                }
-
-                updateFormState();
-            }
-
-            function validateForm() {
-                const selectedSize = sizeSelect.options[sizeSelect.selectedIndex];
-                const stock = parseInt(selectedSize.dataset.stock);
-                const quantity = parseInt(quantityInput.value);
-
-                if (!selectedSize.value) {
-                    alert('Please select a size');
-                    return false;
-                }
-
-                if (quantity > stock) {
-                    alert('Quantity exceeds available stock');
-                    return false;
-                }
-
-                return true;
-            }
-        });
-    </script>
-    <script src="{% static 'js/product-detail.js' %}"></script>
